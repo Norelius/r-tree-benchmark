@@ -1,5 +1,6 @@
 #include "neuron.hpp"
 #include <fstream>
+#include <sstream>
 #include <iostream>
 #include <vector>
 #include <boost/math/quaternion.hpp>
@@ -18,7 +19,7 @@ namespace rtreebench {
           break;
         }
       }
-      NeuronPoint first = NeuronPoint(line);
+      NeuronPoint first(line);
       points.push_back(first);
 
       int id, structure, parent;
@@ -54,30 +55,34 @@ namespace rtreebench {
 
 
   NeuronPoint::NeuronPoint(int pid, int ptype, int pparent, double pradius, const double* pcoordinates) :
-  id(pid), type(ptype), parent(pparent), radius(pradius), coordinates{pcoordinates[0], 
+    id(pid), type(ptype), parent(pparent), radius(pradius), coordinates{pcoordinates[0], 
     pcoordinates[1], pcoordinates[2]} {}
 
-    NeuronPoint::NeuronPoint(const NeuronPoint& rhs) : id(rhs.id), type(rhs.type), 
+  NeuronPoint::NeuronPoint(const NeuronPoint& rhs) : id(rhs.id), type(rhs.type), 
     parent(rhs.parent), radius(rhs.radius), coordinates{rhs.coordinates[0], 
-      rhs.coordinates[1], rhs.coordinates[2]} {}
+    rhs.coordinates[1], rhs.coordinates[2]} {}
 
-
-      void NeuronPoint::setCoordinates(double x, double y, double z) {
-        coordinates[0] = x;
-        coordinates[1] = y;
-        coordinates[2] = z;
-      }
-
-      void NeuronPoint::moveCoordinates(double xd, double yd, double zd) {
-        coordinates[0] += xd;
-        coordinates[1] += yd;
-        coordinates[2] += zd;
-      }
-
-      std::ostream& operator<<(std::ostream& os, const NeuronPoint& npt) {
-        os << "{id=" << npt.id << " type=" << npt.type << " parent=" << npt.parent
-        << " radius=" << npt.radius << " point=[" << npt.coordinates[0] << ", " 
-        << npt.coordinates[1] << ", " << npt.coordinates[2] << "]}";
-        return os;
-      }
+  NeuronPoint::NeuronPoint(std::string &s) {
+    std::istringstream ss(s);
+    ss >> id >> type >> coordinates[0] >> coordinates[1] >> coordinates[2] >> radius >> parent;
     }
+
+  void NeuronPoint::setCoordinates(double x, double y, double z) {
+    coordinates[0] = x;
+    coordinates[1] = y;
+    coordinates[2] = z;
+  }
+
+  void NeuronPoint::moveCoordinates(double xd, double yd, double zd) {
+    coordinates[0] += xd;
+    coordinates[1] += yd;
+    coordinates[2] += zd;
+  }
+
+  std::ostream& operator<<(std::ostream& os, const NeuronPoint& npt) {
+    os << "{id=" << npt.id << " type=" << npt.type << " parent=" << npt.parent
+    << " radius=" << npt.radius << " point=[" << npt.coordinates[0] << ", " 
+    << npt.coordinates[1] << ", " << npt.coordinates[2] << "]}";
+    return os;
+  }
+}
