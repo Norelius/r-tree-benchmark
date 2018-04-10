@@ -6,7 +6,8 @@
 
 namespace rtreebench {
 
-  Neuron::Neuron(std::ifstream &in) {
+  Neuron::Neuron(const char* filename) {
+    std::ifstream in(filename);
     points.resize(1500);
     std::string line;
     if (in.is_open()) {
@@ -41,7 +42,9 @@ namespace rtreebench {
   }
 
   void Neuron::move(double xd, double yd, double zd){
-    // TODO
+    for (auto itr = points.begin(); itr != points.end(); ++itr) {
+      itr->moveCoordinates(xd, yd, zd);
+    }
   }
 
   NeuronPoint::NeuronPoint() {}
@@ -54,21 +57,27 @@ namespace rtreebench {
   id(pid), type(ptype), parent(pparent), radius(pradius), coordinates{pcoordinates[0], 
     pcoordinates[1], pcoordinates[2]} {}
 
-  NeuronPoint::NeuronPoint(const NeuronPoint& rhs) : id(rhs.id), type(rhs.type), 
+    NeuronPoint::NeuronPoint(const NeuronPoint& rhs) : id(rhs.id), type(rhs.type), 
     parent(rhs.parent), radius(rhs.radius), coordinates{rhs.coordinates[0], 
-    rhs.coordinates[1], rhs.coordinates[2]} {}
+      rhs.coordinates[1], rhs.coordinates[2]} {}
 
 
-  void NeuronPoint::setCoordinates(double x, double y, double z) {
-    coordinates[0] = x;
-    coordinates[1] = y;
-    coordinates[2] = z;
-  }
+      void NeuronPoint::setCoordinates(double x, double y, double z) {
+        coordinates[0] = x;
+        coordinates[1] = y;
+        coordinates[2] = z;
+      }
 
-  std::ostream& operator<<(std::ostream& os, const NeuronPoint& npt) {
-    os << "{id=" << npt.id << " type=" << npt.type << " parent=" << npt.parent
-    << " radius=" << npt.radius << " point=[" << npt.coordinates[0] << ", " 
-    << npt.coordinates[1] << ", " << npt.coordinates[2] << "]}";
-    return os;
-  }
-}
+      void NeuronPoint::moveCoordinates(double xd, double yd, double zd) {
+        coordinates[0] += xd;
+        coordinates[1] += yd;
+        coordinates[2] += zd;
+      }
+
+      std::ostream& operator<<(std::ostream& os, const NeuronPoint& npt) {
+        os << "{id=" << npt.id << " type=" << npt.type << " parent=" << npt.parent
+        << " radius=" << npt.radius << " point=[" << npt.coordinates[0] << ", " 
+        << npt.coordinates[1] << ", " << npt.coordinates[2] << "]}";
+        return os;
+      }
+    }
