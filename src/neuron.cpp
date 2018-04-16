@@ -9,7 +9,7 @@ namespace rtreebench {
 
   Neuron::Neuron(const char* filename) {
     std::ifstream in(filename);
-    points.resize(1500);
+    points.reserve(1500);
     std::string line;
     if (in.is_open()) {
         // skip comments
@@ -27,10 +27,11 @@ namespace rtreebench {
       double cords[3];
       while (in >> id >> structure >> cords[0] >> cords[1] >> cords[2] >> radius >> parent) {
         NeuronPoint np = {id, structure, parent, radius, &cords[0]};
-        std::cout << np << std::endl;
         points.push_back(np);
       }
       in.close();
+    } else {
+      throw std::invalid_argument("No valid inputfile");
     }
   }
 
