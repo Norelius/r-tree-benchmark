@@ -52,7 +52,7 @@ namespace rtreebench {
   NeuronPoint::NeuronPoint() {}
 
   NeuronPoint::NeuronPoint(int pid, int ptype, int pparent, double pradius, double px, double py, double pz) :
-  id(pid), type(ptype), parent(pparent), radius(pradius), coordinates{px, py, pz} {}
+    id(pid), type(ptype), parent(pparent), radius(pradius), coordinates{px, py, pz} {}
 
 
   NeuronPoint::NeuronPoint(int pid, int ptype, int pparent, double pradius, const double* pcoordinates) :
@@ -66,7 +66,7 @@ namespace rtreebench {
   NeuronPoint::NeuronPoint(std::string &s) {
     std::istringstream ss(s);
     ss >> id >> type >> coordinates[0] >> coordinates[1] >> coordinates[2] >> radius >> parent;
-    }
+  }
 
   void NeuronPoint::setCoordinates(double x, double y, double z) {
     coordinates[0] = x;
