@@ -10,5 +10,6 @@ set xtics 0 850
 
 set term postscript eps enhanced color "Helvetica" 18
 set output "reads.ps"
-plot 'rstar.dat' using ($2/1000.0):4 title 'R*'
+plot 'rstar100.dat' using ($2/1000.0):4 title 'R*-tree', \
+	 'quadratic100.dat' using ($2/1000.0):4 title 'Quadratic R-tree'
 set term x11

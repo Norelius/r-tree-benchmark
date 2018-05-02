@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+# Graphics and data files
+*.dat
+*.ps

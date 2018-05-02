@@ -16,10 +16,11 @@ using namespace SpatialIndex;
 using namespace SpatialIndex::StorageManager;
 
 const char* beguinfile = "../data/control-1-wt.CNG.swc";
-const int default_number_neurons = 1000;
+const int default_number_neurons = 100;
 const double deviation = 300;
 double dev[] = {260, 140, 350};
 const bool verbose = false;
+std::string treetypes[] = {"Linear", "Quadratic", "R*"};
 
 typedef boost::mt19937 generator_type;
 
@@ -96,58 +97,97 @@ void shimmyAndAddNeurons(SpatialIndex::ISpatialIndex* tree, Neuron& base, int n,
 
 int main(int argc, char const *argv[]) {
   int n = default_number_neurons;
-  if (argc >= 2) {
-    n = std::atoi(argv[1]);
-  }
-  if (argc >= 3) {
-
-  }
-
-  // Create main memory storage manager and tree.
-  IStorageManager* store = createNewMemoryStorageManager();
+  SpatialIndex::RTree::RTreeVariant rv =  SpatialIndex::RTree::RTreeVariant::RV_RSTAR;
   uint32_t const dimension = 3;
-  double const fill = 0.7; // default
+  double fill = 0.7; // default
   uint32_t indexCapacity = 80;
   uint32_t leafCapacity = 80;
-  SpatialIndex::RTree::RTreeVariant rv =  SpatialIndex::RTree::RTreeVariant::RV_RSTAR;
-  id_type indexIdentifier;
-  SpatialIndex::ISpatialIndex* tree = RTree::createNewRTree(*store, fill, 
-    indexCapacity, leafCapacity, dimension, rv, indexIdentifier);
+  
+  if (argc >= 4) {
+    int x = std::atoi(argv[3]);
+    if (x == 1) {
+      rv = SpatialIndex::RTree::RTreeVariant::RV_QUADRATIC;
+      fill = 0.4; 
+    }
+  }
+  if (argc >= 3) {
+    n = std::atoi(argv[2]);
+  }
+  char mode; //const char *
+  if (argc >= 2) {
+    mode = argv[1][0];
+  }
 
   // Populate tree.
   Neuron beguin(beguinfile);
+
+
+  if (mode == 't') {
+    // Create main memory storage manager and tree.
+    IStorageManager* store = createNewMemoryStorageManager();
+    id_type indexIdentifier;
+    SpatialIndex::ISpatialIndex* tree = RTree::createNewRTree(*store, fill, 
+      indexCapacity, leafCapacity, dimension, rv, indexIdentifier);
     // Perform range queries.
-  double ac[3] = {-11.2, -30.3, -102};
-  Point a = Point(&ac[0], 3);
-  double bc[3] = {1.3, 8, 1};
-  Point b = Point(&bc[0], 3);
-  Region region(a, b);
-  MyVisitor visitor;
-  
+    double ac[3] = {-11.2, -30.3, -102};
+    Point a = Point(&ac[0], 3);
+    double bc[3] = {1.3, 8, 1};
+    Point b = Point(&bc[0], 3);
+    Region region(a, b);
+    MyVisitor visitor;
 
-
-  if (!verbose) {
-    std::cout << "# Neurons Points Time Reads" << std::endl;
-  }
-  for (int i = 1; i < 8; ++i) {
-    shimmyAndAddNeurons(tree, beguin, 5*n, dev);
-    IStatistics* stats;
-    tree->getStatistics(&stats); 
-    int reads = stats->getReads();
-
-    auto start = std::chrono::high_resolution_clock::now();
-    tree->intersectsWithQuery(region, visitor);
-    auto finish = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = finish - start;
-
-    tree->getStatistics(&stats);
-    reads = stats->getReads() - reads;
-
-    if (verbose) {
-      std::cout << std::endl << *tree <<  "Query time: " << elapsed.count()*1000 << "ms" << std::endl;
-    } else {
-      std::cout << i*n*5 << " " << stats->getNumberOfData() << " " << elapsed.count()*1000 << " " << reads << std::endl;
+    if (!verbose) {
+      std::cout << "# Neurons Points Time(ms) Reads" << std::endl
+      << "# fill=" << fill << " indexCapacity=" << indexCapacity
+      << " leafCapacity=" << leafCapacity << " type=" << treetypes[rv] << std::endl;
     }
-  }
+    for (int i = 1; i < 8; ++i) {
+      shimmyAndAddNeurons(tree, beguin, 5*n, dev);
+      IStatistics* stats;
+      tree->getStatistics(&stats); 
+      int reads = stats->getReads();
+
+      auto start = std::chrono::high_resolution_clock::now();
+      tree->intersectsWithQuery(region, visitor);
+      auto finish = std::chrono::high_resolution_clock::now();
+      std::chrono::duration<double> elapsed = finish - start;
+
+      tree->getStatistics(&stats);
+      reads = stats->getReads() - reads;
+
+      if (verbose) {
+        std::cout << std::endl << *tree <<  "Query time: " << elapsed.count()*1000 << "ms" << std::endl;
+      } else {
+        std::cout << i*n*5 << " " << stats->getNumberOfData() << " " << elapsed.count()*1000 << " " << reads << std::endl;
+      }
+    }
+  } else if (mode == 'b') {
+    if (!verbose) {
+      std::cout << "# Neurons Points Buildtime(s)" << std::endl
+      << "# fill=" << fill << " indexCapacity=" << indexCapacity
+      << " leafCapacity=" << leafCapacity << " type=" << treetypes[rv] << std::endl;
+    }
+    for (int i = 1; i < 8; ++i) {
+      IStorageManager* store = createNewMemoryStorageManager();
+      SpatialIndex::RTree::RTreeVariant rv =  SpatialIndex::RTree::RTreeVariant::RV_RSTAR;
+      id_type indexIdentifier;
+      SpatialIndex::ISpatialIndex* tree = RTree::createNewRTree(*store, fill, 
+        indexCapacity, leafCapacity, dimension, rv, indexIdentifier);
+
+      auto start = std::chrono::high_resolution_clock::now();
+      shimmyAndAddNeurons(tree, beguin, 5*n*i, dev);
+      auto finish = std::chrono::high_resolution_clock::now();
+      std::chrono::duration<double> elapsed = finish - start;
+      IStatistics* stats;
+      tree->getStatistics(&stats);
+
+      if (verbose) {
+        std::cout << std::endl << *tree <<  "Buildtime time: " << elapsed.count() << "s" << std::endl;
+      } else {
+        std::cout << i*n*5 << " " << stats->getNumberOfData() << " " << elapsed.count() << std::endl;
+      }
+    }
+  } 
   return 0;
 }
+
