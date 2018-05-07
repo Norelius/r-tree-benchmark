@@ -19,6 +19,7 @@ const char* beguinfile = "../data/control-1-wt.CNG.swc";
 const int default_number_neurons = 100;
 const double deviation = 300;
 double dev[] = {260, 140, 350};
+const int span = 500;
 const bool verbose = false;
 std::string treetypes[] = {"Linear", "Quadratic", "R*"};
 
@@ -67,11 +68,11 @@ void addNeuron(SpatialIndex::ISpatialIndex* tree, Neuron &n) {
 
 // Adds n copies of the given neuron that will be slightly shifted from the
 // base, up to at most +- d in any dimension.
-void shimmyAndAddNeurons(SpatialIndex::ISpatialIndex* tree, Neuron& base, int n, double* d) {
+void shimmyAndAddNeurons(SpatialIndex::ISpatialIndex* tree, Neuron& base, int n, double* d, double xOffset) {
 
   // Rng double.
   generator_type generator(32);
-  boost::uniform_real<> uni_dist_x(-d[0]/2,d[0]/2);
+  boost::uniform_real<> uni_dist_x(xOffset + -d[0]/2, xOffset + d[0]/2);
   boost::variate_generator<generator_type, boost::uniform_real<>> unix(generator, uni_dist_x);
   boost::uniform_real<> uni_dist_y(-d[1]/2,d[1]/2);
   boost::variate_generator<generator_type, boost::uniform_real<>> uniy(generator, uni_dist_y);
@@ -95,6 +96,16 @@ void shimmyAndAddNeurons(SpatialIndex::ISpatialIndex* tree, Neuron& base, int n,
   }
 }
 
+/*
+Usage ./rstar.out [(time)(build)] n m d
+[(time)(build)]: If the test should be run for build time or range query
+  execution time and reads. The last two run simultaneously.
+n: Sice of the test. The test will run on 7 data sets based on n [5*n:5*n:7*n].
+m: Integer describing the mode of the tree, either quadratic or R*.
+  R* is default, quadratic is 1.
+d: Integer describing the test should keep the desnsity constant (500micrometer^3)
+  or scale with n. Scale is default, constant is 1.
+*/
 int main(int argc, char const *argv[]) {
   int n = default_number_neurons;
   SpatialIndex::RTree::RTreeVariant rv =  SpatialIndex::RTree::RTreeVariant::RV_RSTAR;
@@ -102,7 +113,12 @@ int main(int argc, char const *argv[]) {
   double fill = 0.7; // default
   uint32_t indexCapacity = 80;
   uint32_t leafCapacity = 80;
-  
+  bool constantDensity = false;
+  int d = 0;
+  if (argc >= 5) {
+    d = std::atoi(argv[4]);
+    constantDensity = d;
+  }
   if (argc >= 4) {
     int x = std::atoi(argv[3]);
     if (x == 1) {
@@ -139,10 +155,11 @@ int main(int argc, char const *argv[]) {
     if (!verbose) {
       std::cout << "# Neurons Points Time(ms) Reads" << std::endl
       << "# fill=" << fill << " indexCapacity=" << indexCapacity
-      << " leafCapacity=" << leafCapacity << " type=" << treetypes[rv] << std::endl;
+      << " leafCapacity=" << leafCapacity << " type=" << treetypes[rv]
+      << " constantDensity=" << (constantDensity ? "true" : "false") << std::endl;
     }
     for (int i = 1; i < 8; ++i) {
-      shimmyAndAddNeurons(tree, beguin, 5*n, dev);
+      shimmyAndAddNeurons(tree, beguin, 5*n, dev, d * (i - 1) * span);
       IStatistics* stats;
       tree->getStatistics(&stats); 
       int reads = stats->getReads();
@@ -165,7 +182,8 @@ int main(int argc, char const *argv[]) {
     if (!verbose) {
       std::cout << "# Neurons Points Buildtime(s)" << std::endl
       << "# fill=" << fill << " indexCapacity=" << indexCapacity
-      << " leafCapacity=" << leafCapacity << " type=" << treetypes[rv] << std::endl;
+      << " leafCapacity=" << leafCapacity << " type=" << treetypes[rv]
+      << " constantDensity=" << (constantDensity ? "true" : "false")  << std::endl;
     }
     for (int i = 1; i < 8; ++i) {
       IStorageManager* store = createNewMemoryStorageManager();
@@ -175,7 +193,7 @@ int main(int argc, char const *argv[]) {
         indexCapacity, leafCapacity, dimension, rv, indexIdentifier);
 
       auto start = std::chrono::high_resolution_clock::now();
-      shimmyAndAddNeurons(tree, beguin, 5*n*i, dev);
+      shimmyAndAddNeurons(tree, beguin, 5*n*i, dev,  d * (i - 1) * span);
       auto finish = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> elapsed = finish - start;
       IStatistics* stats;
